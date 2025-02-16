@@ -10,9 +10,11 @@ from models import ModuleType, OperationResult, StatisticData
 
 
 class FileOperations:
+    _lock = asyncio.Lock()
+        
+        
     def __init__(self, base_path: str = "./results"):
         self.base_path = Path(base_path)
-        self.lock = asyncio.Lock()
         self.module_paths: dict[ModuleType, dict[str, Path]] = {
             "register": {
                 "success": self.base_path / "registration" / "registration_success.txt",
@@ -65,7 +67,7 @@ class FileOperations:
         file_path = self.module_paths[module][
             "success" if result["status"] else "failed"
         ]
-        async with self.lock:
+        async with FileOperations._lock:
             try:
                 async with aiofiles.open(file_path, "a") as file:
                     await file.write(f"{result['identifier']}:{result['data']}\n")
@@ -77,7 +79,7 @@ class FileOperations:
 
     async def export_unverified_email(self, email: str, password: str):
         file_path = self.module_paths["accounts"]["unverified"]
-        async with self.lock:
+        async with FileOperations._lock:
             try:
                 async with aiofiles.open(file_path, "a") as file:
                     await file.write(f"{email}:{password}\n")
@@ -88,7 +90,7 @@ class FileOperations:
 
     async def export_banned_email(self, email: str, password: str):
         file_path = self.module_paths["accounts"]["banned"]
-        async with self.lock:
+        async with FileOperations._lock:
             try:
                 async with aiofiles.open(file_path, "a") as file:
                     await file.write(f"{email}:{password}\n")
@@ -100,7 +102,7 @@ class FileOperations:
 
     async def export_unregistered_email(self, email: str, password: str):
         file_path = self.module_paths["accounts"]["unregistered"]
-        async with self.lock:
+        async with FileOperations._lock:
             try:
                 async with aiofiles.open(file_path, "a") as file:
                     await file.write(f"{email}:{password}\n")
@@ -112,7 +114,7 @@ class FileOperations:
 
     async def export_stats(self, data: StatisticData):
         file_path = self.module_paths["stats"]["base"]
-        async with self.lock:
+        async with FileOperations._lock:
             try:
                 async with aiofiles.open(file_path, mode="a", newline="") as f:
                     writer = AsyncWriter(f)
